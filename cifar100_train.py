@@ -38,90 +38,92 @@ import tensorflow as tf
 
 import cifar100
 
-parser = cifar100.parser
+PARSER = cifar100.parser
 
-parser.add_argument('--train_dir', type=str, default='/tmp/cifar100_train',
+PARSER.add_argument('--train_dir', type=str, default='/tmp/cifar100_train',
                     help='Directory where to write event logs and checkpoint.')
 
-parser.add_argument('--max_steps', type=int, default=1000000,
+PARSER.add_argument('--max_steps', type=int, default=1000000,
                     help='Number of batches to run.')
 
-parser.add_argument('--log_device_placement', type=bool, default=False,
+PARSER.add_argument('--log_device_placement', type=bool, default=False,
                     help='Whether to log device placement.')
 
-parser.add_argument('--log_frequency', type=int, default=10,
+PARSER.add_argument('--log_frequency', type=int, default=10,
                     help='How often to log results to the console.')
 
 
 def train():
-  """Train CIFAR-100 for a number of steps."""
-  output = open('output_data/output_'+ str(time.time()) + '.txt', 'w')
-  with tf.Graph().as_default():
-    global_step = tf.train.get_or_create_global_step()
+    """Train CIFAR-100 for a number of steps."""
+    output = open('output_data/output_' + str(time.time()) + '.txt', 'w')
+    with tf.Graph().as_default():
+        global_step = tf.train.get_or_create_global_step()
 
-    # Get images and labels for CIFAR-100.
-    # Force input pipeline to CPU:0 to avoid operations sometimes ending up on
-    # GPU and resulting in a slow down.
-    images, labels = cifar100.distorted_inputs()
+        # Get images and labels for CIFAR-100.
+        # Force input pipeline to CPU:0 to avoid operations sometimes ending up on
+        # GPU and resulting in a slow down.
+        with tf.device('/cpu:0'):
+          images, labels = cifar100.distorted_inputs()
 
-    # Build a Graph that computes the logits predictions from the
-    # inference model.
-    logits = cifar100.inference(images)
+        # Build a Graph that computes the logits predictions from the
+        # inference model.
+        logits = cifar100.inference(images)
 
-    # Calculate loss.
-    loss = cifar100.loss(logits, labels)
+        # Calculate loss.
+        loss = cifar100.loss(logits, labels)
 
-    # Build a Graph that trains the model with one batch of examples and
-    # updates the model parameters.
-    train_op = cifar100.train(loss, global_step)
+        # Build a Graph that trains the model with one batch of examples and
+        # updates the model parameters.
+        train_op = cifar100.train(loss, global_step)
 
-    class _LoggerHook(tf.train.SessionRunHook):
-      """Logs loss and runtime."""
+        class _LoggerHook(tf.train.SessionRunHook):
+            """Logs loss and runtime."""
 
-      def begin(self):
-        self._step = -1
-        self._start_time = time.time()
+            def begin(self):
+                self._step = -1
+                self._start_time = time.time()
 
-      def before_run(self, run_context):
-        self._step += 1
-        return tf.train.SessionRunArgs(loss)  # Asks for loss value.
+            def before_run(self, run_context):
+                self._step += 1
+                return tf.train.SessionRunArgs(loss)  # Asks for loss value.
 
-      def after_run(self, run_context, run_values):
-        if self._step % FLAGS.log_frequency == 0:
-          current_time = time.time()
-          duration = current_time - self._start_time
-          self._start_time = current_time
+            def after_run(self, run_context, run_values):
+                if self._step % FLAGS.log_frequency == 0:
+                    current_time = time.time()
+                    duration = current_time - self._start_time
+                    self._start_time = current_time
 
-          loss_value = run_values.results
-          examples_per_sec = FLAGS.log_frequency * FLAGS.batch_size / duration
-          sec_per_batch = float(duration / FLAGS.log_frequency)
+                    loss_value = run_values.results
+                    examples_per_sec = FLAGS.log_frequency * FLAGS.batch_size / duration
+                    sec_per_batch = float(duration / FLAGS.log_frequency)
 
-          format_str = ('%s: step %d, loss = %.2f (%.1f examples/sec; %.3f '
-                        'sec/batch)')
-          print (format_str % (datetime.now(), self._step, loss_value,
-                               examples_per_sec, sec_per_batch))
-          print ((str(self._step) + '\t' + str(loss_value) + '\n'), file=output)
+                    format_str = ('%s: step %d, loss = %.2f (%.1f examples/sec; %.3f '
+                                  'sec/batch)')
+                    print(format_str % (datetime.now(), self._step, loss_value,
+                                        examples_per_sec, sec_per_batch))
+                    print((str(self._step) + '\t' +
+                           str(loss_value) + '\n'), file=output)
 
-    with tf.train.MonitoredTrainingSession(
-        checkpoint_dir=FLAGS.train_dir,
-        hooks=[tf.train.StopAtStepHook(last_step=FLAGS.max_steps),
-               tf.train.NanTensorHook(loss),
-               _LoggerHook()],
-        config=tf.ConfigProto(
-            log_device_placement=FLAGS.log_device_placement)) as mon_sess:
-      while not mon_sess.should_stop():
-        mon_sess.run(train_op)
-    output.close()
+        with tf.train.MonitoredTrainingSession(
+            checkpoint_dir=FLAGS.train_dir,
+            hooks=[tf.train.StopAtStepHook(last_step=FLAGS.max_steps),
+                   tf.train.NanTensorHook(loss),
+                   _LoggerHook()],
+            config=tf.ConfigProto(
+                log_device_placement=FLAGS.log_device_placement)) as mon_sess:
+            while not mon_sess.should_stop():
+                mon_sess.run(train_op)
+        output.close()
 
 
 def main(argv=None):  # pylint: disable=unused-argument
-  cifar100.maybe_download_and_extract()
-  if tf.gfile.Exists(FLAGS.train_dir):
-    tf.gfile.DeleteRecursively(FLAGS.train_dir)
-  tf.gfile.MakeDirs(FLAGS.train_dir)
-  train()
+    cifar100.maybe_download_and_extract()
+    if tf.gfile.Exists(FLAGS.train_dir):
+        tf.gfile.DeleteRecursively(FLAGS.train_dir)
+    tf.gfile.MakeDirs(FLAGS.train_dir)
+    train()
 
 
 if __name__ == '__main__':
-  FLAGS = parser.parse_args()
-  tf.app.run()
+    FLAGS = PARSER.parse_args()
+    tf.app.run()

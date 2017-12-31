@@ -4,6 +4,7 @@ mpl.use('Agg')
 import matplotlib.pyplot as plt
 import tkinter
 
+
 def load_points(path):
     '''
     Input: 
@@ -13,6 +14,7 @@ def load_points(path):
     '''
     data = np.loadtxt(path)
     return data
+
 
 def plot_points(data):
     '''
@@ -24,7 +26,7 @@ def plot_points(data):
     numCols = data.shape[1]
     x, y1 = np.split(data, numCols, axis=1)
 
-    plt.plot(x,y1)
+    plt.plot(x, y1)
 
     plt.xlabel('Number of Iterations', fontsize=14)
     plt.ylabel('Loss', fontsize=14)
@@ -33,6 +35,7 @@ def plot_points(data):
     plt.legend(['Average Loss'], loc='upper left')
     plt.show()
 
+
 def plot_1D_points(points):
     '''
     where 'points' is a list of [y_1...y_n] points,
@@ -40,12 +43,13 @@ def plot_1D_points(points):
     the x value, and the point, y_n, as the y value
     '''
     fig = plt.figure()
-    x,y = zip(*[(x,y) for x,y in enumerate(points)])
+    x, y = zip(*[(x, y) for x, y in enumerate(points)])
     ax = fig.gca()
-    ax.plot(x,y)
+    ax.plot(x, y)
     ax.legend()
     plt.show()
-    
+
+
 def save_graph(data, title, output):
     '''
     Input:
@@ -56,7 +60,7 @@ def save_graph(data, title, output):
     numCols = data.shape[1]
     x, y1 = np.split(data, numCols, axis=1)
 
-    plt.plot(x,y1)
+    plt.plot(x, y1)
 
     plt.xlabel('Number of Iterations', fontsize=14)
     plt.ylabel('Loss', fontsize=14)
@@ -64,7 +68,8 @@ def save_graph(data, title, output):
 
     plt.legend(['Loss'], loc='upper left')
     plt.savefig(output, bbox_inches='tight')
-    
+
+
 if __name__ == "__main__":
     import sys
     path = sys.argv[1]
